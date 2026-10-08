@@ -64,13 +64,15 @@ Written as they are made. Each entry: the decision, the alternative, and why.
 
 ---
 
-### A failed file can be retried; the retry reuses its registry row
+### A failed or interrupted file can be retried; the retry reuses its registry row
 
-**Decision.** A file in status `FAILED` may be loaded again. The retry updates the existing `file_registry` row and increments `attempt_count`.
+**Decision.** A file in status `FAILED` or `LOADING` may be loaded again. The retry updates the existing `file_registry` row and increments `attempt_count`. There is no `SKIPPED_DUPLICATE` status; a re-sent copy of a `LOADED` file is skipped and the skip is logged on that attempt's `job_run_log` row.
 
-**Alternative.** Insert a new registry row per attempt.
+**Alternative.** Insert a new registry row per attempt; leave `LOADING` rows for a human; mark duplicates with their own status.
 
-**Why.** The checksum is unique, so a second row is impossible without weakening the duplicate check that is the whole point of the table. History is not lost: each attempt opens its own `job_run_log` row carrying the `file_id`.
+**Why.** The checksum is unique, so a second row is impossible without weakening the duplicate check that is the whole point of the table. History is not lost: each attempt opens its own `job_run_log` row carrying the `file_id`. `LOADING` found at registration means a session died before recording an outcome — the same situation as `FAILED`, just without the error message. And a duplicate has no row of its own to carry a status, which is why that status could never actually be written.
+
+**Assumption this depends on.** Only one loader runs at a time. If two ran concurrently, the second would see the first's genuine, in-progress `LOADING` row and retry it — loading the file twice. Today a single `DBMS_SCHEDULER` job is the only caller, so the assumption holds; if that changes, `register_file` needs a lock (e.g. `SELECT … FOR UPDATE NOWAIT` on the registry row, held for the whole load).
 
 ---
 

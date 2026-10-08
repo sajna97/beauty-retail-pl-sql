@@ -35,10 +35,16 @@ COMMENT ON TABLE ref_file_type IS 'Metadata-driven file dispatch: never hard-cod
 -- One row per physical file seen. The checksum is what stops the same
 -- file being loaded twice -- a mistake every real ETL makes once.
 --
--- Retry rule: a FAILED file may be loaded again, and the retry REUSES
--- this row (attempt_count + 1) rather than inserting a new one -- the
--- unique checksum would refuse a second row anyway. Per-attempt history
--- is not lost: each attempt opens its own JOB_RUN_LOG row with file_id.
+-- Retry rule: a FAILED file may be loaded again, and so may a LOADING
+-- one -- LOADING found at registration time means a session died
+-- mid-load and never recorded the outcome. The retry REUSES this row
+-- (attempt_count + 1) rather than inserting a new one -- the unique
+-- checksum would refuse a second row anyway. Per-attempt history is not
+-- lost: each attempt opens its own JOB_RUN_LOG row with file_id.
+--
+-- There is no "skipped duplicate" status. A re-sent copy of a LOADED
+-- file has no row of its own to mark (the checksum is unique), so the
+-- skip is recorded on that attempt's JOB_RUN_LOG row instead.
 -- ---------------------------------------------------------------------
 CREATE TABLE file_registry (
   file_id         NUMBER GENERATED ALWAYS AS IDENTITY,
@@ -60,7 +66,7 @@ CREATE TABLE file_registry (
   CONSTRAINT file_registry_uk  UNIQUE (file_checksum),
   CONSTRAINT file_registry_fk1 FOREIGN KEY (file_type_id) REFERENCES ref_file_type (file_type_id),
   CONSTRAINT file_registry_ck1 CHECK (load_status IN
-        ('REGISTERED','LOADING','LOADED','FAILED','SKIPPED_DUPLICATE')),
+        ('REGISTERED','LOADING','LOADED','FAILED')),
   CONSTRAINT file_registry_ck2 CHECK (attempt_count >= 1)
 );
 
