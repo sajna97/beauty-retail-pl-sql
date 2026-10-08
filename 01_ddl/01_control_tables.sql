@@ -36,8 +36,9 @@ COMMENT ON TABLE ref_file_type IS 'Metadata-driven file dispatch: never hard-cod
 -- file being loaded twice -- a mistake every real ETL makes once.
 --
 -- Retry rule: a FAILED file may be loaded again, and so may a LOADING
--- one -- LOADING found at registration time means a session died
--- mid-load and never recorded the outcome. The retry REUSES this row
+-- or REGISTERED one -- found at registration time, either means a
+-- session died without recording the outcome (REGISTERED: before the
+-- load started; LOADING: part-way through). The retry REUSES this row
 -- (attempt_count + 1) rather than inserting a new one -- the unique
 -- checksum would refuse a second row anyway. Per-attempt history is not
 -- lost: each attempt opens its own JOB_RUN_LOG row with file_id.
