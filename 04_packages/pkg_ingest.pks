@@ -33,26 +33,40 @@ CREATE OR REPLACE PACKAGE pkg_ingest AS
   -- Checksums the file, then looks the checksum up in FILE_REGISTRY:
   --
   --   not found        INSERT a REGISTERED row        -> return file_id
-  --   FAILED           RETRY: reuse the same row,      -> return file_id
-  --                    attempt_count + 1, status back
+  --   FAILED or        RETRY: reuse the same row,      -> return file_id
+  --   LOADING          attempt_count + 1, status back
   --                    to REGISTERED, row counts and
   --                    error_message reset, and DELETE
   --                    this file_id's rows from its
   --                    staging table so the retry does
   --                    not double-load
-  --   LOADED           already done, not an error      -> return NULL
-  --   anything else    not handled yet -- see below    -> return NULL
+  --   LOADED           duplicate -- already done, not  -> return NULL
+  --                    an error
+  --   REGISTERED       not decided yet -- see below    -> return NULL
+  --
+  -- LOADING is retried because, found at registration time, it means a
+  -- session died mid-load without recording an outcome: the same case
+  -- as FAILED, minus the error message.
+  --
+  -- ASSUMPTION: only one loader runs at a time (a single DBMS_SCHEDULER
+  -- job). A second concurrent loader would see the first one's genuine
+  -- LOADING row, retry it, and load the file twice. If loaders ever run
+  -- in parallel, lock the registry row (SELECT ... FOR UPDATE NOWAIT)
+  -- for the whole load before relying on this rule.
+  --
+  -- Duplicates have no status of their own: the existing row is LOADED
+  -- and the unique checksum forbids a second row. The caller records
+  -- the skip on its run for that file -- status WARNING, message from
+  -- E_DUPLICATE_FILE -- so a re-sent file still leaves a trace.
   --
   -- COMMITS before returning. pkg_util.start_run is autonomous and
   -- checks its FK to file_registry from a separate transaction; an
   -- uncommitted registry row would deadlock it (see pkg_util spec).
   --
-  -- OPEN QUESTIONS, decide before writing the body:
-  --   - A row stuck in LOADING means a crashed session. Retry it like
-  --     FAILED, retry only after a timeout, or leave it for a human?
-  --   - SKIPPED_DUPLICATE cannot be recorded on the existing row (it is
-  --     LOADED) and a second row breaks the unique checksum. Drop the
-  --     status, or log duplicates somewhere else?
+  -- OPEN QUESTION, decide before writing the body:
+  --   - A row found still REGISTERED means a session registered the file
+  --     and died before setting LOADING. Retry it like LOADING, or does
+  --     REGISTERED-but-never-started mean something else?
   -- ---------------------------------------------------------------
   FUNCTION register_file (p_directory IN VARCHAR2,
                           p_file_name IN VARCHAR2) RETURN NUMBER;
