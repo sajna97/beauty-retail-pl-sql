@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./scripts/sql.sh:*)",
+      "Bash(./scripts/compile.sh:*)",
+      "Bash(docker exec oraxe sqlplus:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker logs oraxe:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)"
+    ],
+    "deny": [
+      "Bash(git push:*)",
+      "Bash(docker rm:*)",
+      "Bash(docker stop:*)",
+      "Bash(rm -rf:*)",
+      "Read(./data/in/**)",
+      "Read(./.env)"
+    ]
+  }
+}

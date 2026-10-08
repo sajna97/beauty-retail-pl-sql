@@ -1,0 +1,5 @@
+data/in/*
+data/out/*
+!data/in/.gitkeep
+!data/out/.gitkeep
+CLAUDE.local.md
