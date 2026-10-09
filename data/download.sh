@@ -41,20 +41,37 @@ else
 fi
 
 # ---------------------------------------------------------------------
-# 2. EU CosIng -- ingredient master and annex restrictions
+# 2. EU CosIng -- annex restrictions (II-VI) and ingredient master
 #
-# The Commission's own download page changes location periodically. The
-# biobricks mirror is stable and machine-readable.
+# These are the same endpoints the CosIng web app's "CSV" buttons call
+# (base URL from cosing/assets/env-json-config.json). Undocumented, so
+# they can move without notice. Each annex is fetched once; delete the
+# file in in/ to pull a fresh copy.
 #
-# Put the resulting file at:  in/COSING_INGREDIENTS.csv
-# and the annex export at:    in/COSING_ANNEX_II.xml (etc.)
+# The CSVs are saved verbatim: two title rows sit above the real header
+# and some fields contain newlines. The loader deals with that, not us.
 # ---------------------------------------------------------------------
+COSING_API="https://api.tech.ec.europa.eu/cosing20/1.0/api"
+
 echo
-echo "--> CosIng: manual step"
-echo "    Official : https://single-market-economy.ec.europa.eu/sectors/cosmetics/cosmetic-ingredient-database_en"
-echo "    Mirror   : https://github.com/biobricks-ai/cosing-kg"
-echo "    Save the ingredient export as ${IN_DIR}/COSING_INGREDIENTS.csv"
-echo "    Save each annex export as    ${IN_DIR}/COSING_ANNEX_<n>.xml"
+for annex in II III IV V VI; do
+  out="${IN_DIR}/COSING_ANNEX_${annex}.csv"
+  if [[ -f "${out}" ]]; then
+    echo "--> COSING_ANNEX_${annex}.csv already present, skipping"
+    continue
+  fi
+  echo "--> Downloading CosIng Annex ${annex}..."
+  # Write to .part and rename only on success, so a failed download can
+  # never leave a truncated file that the skip check above would trust.
+  curl -fsSL "${COSING_API}/annexes/${annex}/export-csv" -o "${out}.part"
+  mv "${out}.part" "${out}"
+  echo "    wrote $(wc -c < "${out}") bytes"
+done
+
+echo
+echo "--> CosIng ingredients: not automated yet"
+echo "    No bulk export exists; needs paging the EU search API."
+echo "    Target file: ${IN_DIR}/COSING_INGREDIENTS.csv"
 
 # ---------------------------------------------------------------------
 # 3. Supplier price list (.xlsx) -- you create this one
