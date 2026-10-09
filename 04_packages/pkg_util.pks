@@ -57,6 +57,14 @@ CREATE OR REPLACE PACKAGE pkg_util AS
                          p_arg1       IN VARCHAR2 DEFAULT NULL,
                          p_arg2       IN VARCHAR2 DEFAULT NULL);
 
+  -- The message raise_error would carry, returned instead of raised.
+  -- For outcomes that are recorded but are not exceptions -- e.g. a
+  -- duplicate file, logged as a WARNING run. Same substitution rules;
+  -- an unregistered name still raises -20000.
+  FUNCTION error_text (p_error_name IN VARCHAR2,
+                       p_arg1       IN VARCHAR2 DEFAULT NULL,
+                       p_arg2       IN VARCHAR2 DEFAULT NULL) RETURN VARCHAR2;
+
   -- ---------------------------------------------------------------
   -- String helpers -- the workhorses of the INCI parser
   -- ---------------------------------------------------------------

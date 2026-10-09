@@ -106,33 +106,59 @@ CREATE OR REPLACE PACKAGE BODY pkg_util AS
   END replace_first;
 
 
-  PROCEDURE raise_error (p_error_name IN VARCHAR2,
-                         p_arg1       IN VARCHAR2 DEFAULT NULL,
-                         p_arg2       IN VARCHAR2 DEFAULT NULL)
+  -- ---------------------------------------------------------------
+  -- One lookup shared by raise_error and error_text, so the message a
+  -- run logs and the message an exception carries can never drift.
+  -- ---------------------------------------------------------------
+  PROCEDURE lookup_error (p_error_name IN  VARCHAR2,
+                          p_arg1       IN  VARCHAR2,
+                          p_arg2       IN  VARCHAR2,
+                          o_code       OUT NUMBER,
+                          o_msg        OUT VARCHAR2)
   IS
-    l_code NUMBER;
-    -- Wider than message_text (500): substituted arguments can push it
-    -- past 500, and an ORA-06502 here would hide the real error.
-    l_msg  VARCHAR2(4000);
   BEGIN
     SELECT error_code, message_text
-      INTO l_code, l_msg
+      INTO o_code, o_msg
       FROM error_codes
      WHERE error_name = p_error_name;
 
     -- Always substitute both, in order. Skipping a NULL arg1 shifted arg2
     -- into the first slot: 'Parser %s failed for file %s' came out as
     -- 'Parser <file> failed for file %s'.
-    l_msg := replace_first(l_msg, '%s', NVL(p_arg1, '(null)'));
-    l_msg := replace_first(l_msg, '%s', NVL(p_arg2, '(null)'));
-
-    -- 2048 bytes is the most raise_application_error will carry.
-    raise_application_error(l_code, SUBSTRB(l_msg, 1, 2048));
+    o_msg := replace_first(o_msg, '%s', NVL(p_arg1, '(null)'));
+    o_msg := replace_first(o_msg, '%s', NVL(p_arg2, '(null)'));
   EXCEPTION
     WHEN NO_DATA_FOUND THEN
       -- The one bare error code in the repo, and deliberately so: the
       -- registry lookup itself failed, so the registry cannot report it.
       raise_application_error(-20000, 'Unregistered error name: ' || p_error_name);
+  END lookup_error;
+
+
+  FUNCTION error_text (p_error_name IN VARCHAR2,
+                       p_arg1       IN VARCHAR2 DEFAULT NULL,
+                       p_arg2       IN VARCHAR2 DEFAULT NULL) RETURN VARCHAR2
+  IS
+    l_code NUMBER;
+    -- Wider than message_text (500): substituted arguments can push it
+    -- past 500, and an ORA-06502 here would hide the real error.
+    l_msg  VARCHAR2(4000);
+  BEGIN
+    lookup_error(p_error_name, p_arg1, p_arg2, l_code, l_msg);
+    RETURN l_msg;
+  END error_text;
+
+
+  PROCEDURE raise_error (p_error_name IN VARCHAR2,
+                         p_arg1       IN VARCHAR2 DEFAULT NULL,
+                         p_arg2       IN VARCHAR2 DEFAULT NULL)
+  IS
+    l_code NUMBER;
+    l_msg  VARCHAR2(4000);   -- same width reasoning as error_text
+  BEGIN
+    lookup_error(p_error_name, p_arg1, p_arg2, l_code, l_msg);
+    -- 2048 bytes is the most raise_application_error will carry.
+    raise_application_error(l_code, SUBSTRB(l_msg, 1, 2048));
   END raise_error;
 
 
