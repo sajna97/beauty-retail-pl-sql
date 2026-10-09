@@ -144,3 +144,23 @@ The likely reason (inferred, not documented): a regex character range like `[A-Z
 How it reads, inside out: the inner `TRANSLATE` deletes every allowed character, leaving only the junk characters present in `x`; the outer `TRANSLATE` deletes that junk from `x`. `'A'` is an anchor that maps to itself, so the replacement string is never empty (`TRANSLATE` with an empty target returns `NULL`).
 
 `pkg_util.normalise` could still use the regex — PL/SQL has no purity rule — but it must match the virtual columns exactly. Under a linguistic `NLS_SORT` the regex and `TRANSLATE` could disagree, and a parsed token would silently stop joining to its ingredient. One expression in both places removes that risk. The cost is that the allowed-character literal is written twice: a virtual column cannot reference a package constant.
+
+---
+
+### CosIng ingredients come from the search API, paged by ingest date
+
+**Decision.** `data/cosing_ingredients.py` builds `COSING_INGREDIENTS.csv` by paging the EC search API that the CosIng web app uses. It splits the query into ingest-date windows (`esDA_IngestDate`), halving any window with more than 10,000 hits, and refuses to write the file unless the number of documents fetched equals the total the API reports. The index holds a few ingredients more than once (16 extra copies of 12 IDs in October 2026, mostly May 2026 additions indexed twice seconds apart); copies are merged on `substanceId` only when identical in every CSV column, otherwise the script stops.
+
+**Alternative.** A bulk download. There is none: the CosIng site exports annexes (used for `COSING_ANNEX_*.csv`) but only single-ingredient PDFs, and the `biobricks-ai/cosing-kg` mirror needs DVC.
+
+**Why.** The API returns at most 200 rows per page and nothing past result 10,000, so one query cannot reach all ~33,700 ingredients. It rejects prefix, wildcard and query-string filters (HTTP 400), and `substanceId` is indexed as text, so a numeric range on it overlaps. The ingest date is a real date field, single-valued, and its windows add up exactly to the total. Both endpoints are undocumented and may move; the key is read from the app's own config at run time so a rotation does not break the script.
+
+---
+
+### `update_date` is left empty; `status` is landed raw
+
+**Decision.** The ingredient CSV keeps its `update_date` column but leaves it empty. `status` is a new last column, and an empty status stays empty.
+
+**Alternative.** Fill `update_date` from `esDA_IngestDate`; keep only `Active` rows.
+
+**Why.** The API has no regulatory update date. `esDA_IngestDate` is when the EU search index loaded the record — a date that looks plausible and means something else, which is worse than no date. On status: about 3,260 of 33,655 ingredients have no status at all, including ordinary ones such as `CITRUS MEDICA LIMONUM PEEL EXTRACT`. Dropping them would decide a regulatory question in a download script. Staging keeps the raw value; promotion decides what an empty status means.

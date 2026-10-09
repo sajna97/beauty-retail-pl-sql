@@ -69,9 +69,14 @@ for annex in II III IV V VI; do
 done
 
 echo
-echo "--> CosIng ingredients: not automated yet"
-echo "    No bulk export exists; needs paging the EU search API."
-echo "    Target file: ${IN_DIR}/COSING_INGREDIENTS.csv"
+COSING_ING="${IN_DIR}/COSING_INGREDIENTS.csv"
+if [[ -f "${COSING_ING}" ]]; then
+  echo "--> COSING_INGREDIENTS.csv already present, skipping"
+else
+  # No bulk export exists; the pager walks the search API instead.
+  # -I keeps Python from importing anything sitting in the cwd.
+  python3 -I "${HERE}/cosing_ingredients.py" "${COSING_ING}"
+fi
 
 # ---------------------------------------------------------------------
 # 3. Supplier price list (.xlsx) -- you create this one
