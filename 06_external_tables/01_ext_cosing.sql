@@ -26,7 +26,8 @@ CREATE TABLE ext_cosing_ingredient (
   chem_desc      VARCHAR2(4000),
   restriction    VARCHAR2(4000),
   functions      VARCHAR2(2000),
-  update_date    VARCHAR2(50)
+  update_date    VARCHAR2(50),
+  status         VARCHAR2(50)     -- last, so the older columns keep their positions
 )
 ORGANIZATION EXTERNAL (
   TYPE oracle_loader
@@ -52,7 +53,8 @@ ORGANIZATION EXTERNAL (
       chem_desc      CHAR(4000),
       restriction    CHAR(4000),
       functions      CHAR(2000),
-      update_date    CHAR(50)
+      update_date    CHAR(50),
+      status         CHAR(50)
     )
   )
   LOCATION ('COSING_INGREDIENTS.csv')

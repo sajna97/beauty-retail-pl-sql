@@ -45,6 +45,9 @@ CREATE TABLE stg_cosing_ingredient (
   restriction    VARCHAR2(4000),
   functions      VARCHAR2(2000),
   update_date    VARCHAR2(50),
+  -- 'Active' or NULL in the source. NULL is kept, not defaulted: whether
+  -- an ingredient with no status is current is for promotion to decide.
+  status         VARCHAR2(50),
   loaded_at      TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
   CONSTRAINT stg_cosing_ingredient_pk  PRIMARY KEY (stg_id),
   CONSTRAINT stg_cosing_ingredient_fk1 FOREIGN KEY (file_id) REFERENCES file_registry (file_id)
