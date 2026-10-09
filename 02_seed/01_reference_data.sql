@@ -109,7 +109,7 @@ INSERT INTO ref_file_type (file_type_code, description, file_name_pattern, file_
 VALUES ('COSING_INGREDIENTS', 'EU CosIng ingredient export', 'COSING_INGREDIENTS%.csv', 'CSV',
         'pkg_ingest.load_cosing_ingredients', 'STG_COSING_INGREDIENT');
 INSERT INTO ref_file_type (file_type_code, description, file_name_pattern, file_format, parser_proc, target_table)
-VALUES ('COSING_ANNEXES', 'EU CosIng annex II/III/IV/V/VI restrictions', 'COSING_ANNEX%.xml', 'XML',
+VALUES ('COSING_ANNEXES', 'EU CosIng annex II/III/IV/V/VI restrictions', 'COSING_ANNEX%.csv', 'CSV',
         'pkg_ingest.load_cosing_annexes', 'INGREDIENT_RESTRICTIONS');
 INSERT INTO ref_file_type (file_type_code, description, file_name_pattern, file_format, parser_proc, target_table)
 VALUES ('SUPPLIER_PRICES', 'Supplier new-launch and price sheet', 'SUPPLIER_PRICES%.xlsx', 'XLSX',
