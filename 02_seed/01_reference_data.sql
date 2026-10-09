@@ -115,6 +115,13 @@ INSERT INTO ref_file_type (file_type_code, description, file_name_pattern, file_
 VALUES ('SUPPLIER_PRICES', 'Supplier new-launch and price sheet', 'SUPPLIER_PRICES%.xlsx', 'XLSX',
         'pkg_ingest.load_supplier_prices', 'STG_SUPPLIER_PRICE');
 
+-- Parked until their parsers exist: process_directory skips files of an
+-- inactive type instead of failing the batch on a stub every night.
+-- Switching a feed on is one UPDATE here.
+UPDATE ref_file_type
+   SET active_flag = 'N'
+ WHERE file_type_code IN ('OBF_PRODUCTS', 'COSING_ANNEXES', 'SUPPLIER_PRICES');
+
 -- ---------------------------------------------------------------------
 -- ERROR_CODES -- allocate ranges up front
 -- ---------------------------------------------------------------------
@@ -126,6 +133,7 @@ INSERT INTO error_codes (error_code, module_name, error_name, message_text, seve
 INSERT INTO error_codes (error_code, module_name, error_name, message_text, severity) VALUES (-20102, 'PKG_INGEST',     'E_DUPLICATE_FILE',    'File already loaded (checksum match): %s', 'WARN');
 INSERT INTO error_codes (error_code, module_name, error_name, message_text, severity) VALUES (-20103, 'PKG_INGEST',     'E_PARSER_FAILED',     'Parser %s failed for file %s', 'ERROR');
 INSERT INTO error_codes (error_code, module_name, error_name, message_text, severity) VALUES (-20104, 'PKG_INGEST',     'E_NO_APEX_PARSER',    'APEX_DATA_PARSER is not available; convert the xlsx to CSV', 'ERROR');
+INSERT INTO error_codes (error_code, module_name, error_name, message_text, severity) VALUES (-20105, 'PKG_INGEST',     'E_AMBIGUOUS_FILE_TYPE', 'File %s matches more than one active file type', 'ERROR');
 
 INSERT INTO error_codes (error_code, module_name, error_name, message_text, severity) VALUES (-20201, 'PKG_INGREDIENT', 'E_EMPTY_INCI',        'Product %s has no INCI string to parse', 'WARN');
 INSERT INTO error_codes (error_code, module_name, error_name, message_text, severity) VALUES (-20202, 'PKG_INGREDIENT', 'E_PARSE_FAILED',      'INCI parse failed for product %s', 'ERROR');
