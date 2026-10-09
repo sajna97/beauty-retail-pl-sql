@@ -56,11 +56,8 @@ docker exec oraxe chmod 755 /opt/oracle/inci/exec/list_dir.sh
 @00_setup/01_create_user.sql
 @00_setup/02_exec_directory.sql
 
--- 5. Build everything (as INCI)
+-- 5. Build everything (as INCI), external tables included
 @install.sql
-
--- 6. External tables, once the files are in place
-@06_external_tables/01_ext_cosing.sql
 ```
 
 ---

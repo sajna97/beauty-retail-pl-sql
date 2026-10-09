@@ -60,9 +60,10 @@ PROMPT ============================================================
 PROMPT
 PROMPT ============================================================
 PROMPT  External tables
-PROMPT  (skip if the data files are not in place yet)
+PROMPT  (data files need not exist yet -- they are read at query time)
 PROMPT ============================================================
--- @@06_external_tables/01_ext_cosing.sql
+@@06_external_tables/01_ext_cosing.sql
+@@06_external_tables/02_ext_inbound_listing.sql
 
 PROMPT
 PROMPT ============================================================
