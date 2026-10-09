@@ -31,7 +31,7 @@ DATE_FIELD = "esDA_IngestDate"
 # (CSV column, API field, byte limit in ext_cosing_ingredient)
 COLUMNS = [
     ("cosing_ref_no", "substanceId",         100),
-    ("inci_name",     "inciName",            1000),
+    ("inci_name",     "inciName",            4000),
     ("inn_name",      "innName",             1000),
     ("ph_eur_name",   "phEurName",           1000),
     ("cas_no",        "casNo",               500),

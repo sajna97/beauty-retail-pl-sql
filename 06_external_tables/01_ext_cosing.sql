@@ -18,7 +18,7 @@
 -- ---------------------------------------------------------------------
 CREATE TABLE ext_cosing_ingredient (
   cosing_ref_no  VARCHAR2(100),
-  inci_name      VARCHAR2(1000),
+  inci_name      VARCHAR2(4000),   -- ferment blends run past 2,000 bytes
   inn_name       VARCHAR2(1000),
   ph_eur_name    VARCHAR2(1000),
   cas_no         VARCHAR2(500),
@@ -45,7 +45,7 @@ ORGANIZATION EXTERNAL (
     REJECT ROWS WITH ALL NULL FIELDS
     (
       cosing_ref_no  CHAR(100),
-      inci_name      CHAR(1000),
+      inci_name      CHAR(4000),
       inn_name       CHAR(1000),
       ph_eur_name    CHAR(1000),
       cas_no         CHAR(500),
