@@ -42,14 +42,19 @@ docker run -d --name oraxe -p 1521:1521 \
 ./data/download.sh 20000
 
 # 3. Make the files visible to the database
-docker exec oraxe mkdir -p /opt/oracle/inci/{in,out,bad,archive}
+docker exec oraxe mkdir -p /opt/oracle/inci/{in,out,bad,archive,exec}
 docker cp ./data/in/. oraxe:/opt/oracle/inci/in/
+# .inci_listing is the location file of ext_inbound_listing; it must exist
+docker exec oraxe touch /opt/oracle/inci/in/.inci_listing
+docker cp ./00_setup/list_dir.sh oraxe:/opt/oracle/inci/exec/
 docker exec oraxe chown -R oracle:oinstall /opt/oracle/inci
+docker exec oraxe chmod 755 /opt/oracle/inci/exec/list_dir.sh
 ```
 
 ```sql
 -- 4. Create the schema (as SYS)
 @00_setup/01_create_user.sql
+@00_setup/02_exec_directory.sql
 
 -- 5. Build everything (as INCI)
 @install.sql
